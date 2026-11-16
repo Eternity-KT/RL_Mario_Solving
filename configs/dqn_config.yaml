@@ -1,0 +1,31 @@
+# Cau hinh khoi dau de tich hop voi chuong trinh cua Nguoi 2.
+# Chua phai cau hinh da duoc kiem chung bang huan luyen.
+
+seed: 42
+device: auto
+
+# Dung cau hinh moi truong hien co
+env_config: configs/env.json
+
+agent:
+  learning_rate: 0.0001
+  gamma: 0.99
+  batch_size: 64
+  replay_buffer_size: 10000
+
+  epsilon_start: 1.0
+  epsilon_end: 0.05
+  epsilon_decay_steps: 80000
+
+  # Cap nhat mang dich moi 10000 lan cap nhat trong so
+  target_update_interval_updates: 10000
+
+training:
+  # Cac gia tri *_steps ben duoi tinh theo so lan env.step()
+  total_steps: 100000
+  learning_starts: 1000
+  train_frequency_steps: 4
+  checkpoint_interval_steps: 10000
+
+logging:
+  log_dir: logs
