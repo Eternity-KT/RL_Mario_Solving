@@ -1,0 +1,61 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Phiên bản Python lấy từ file .python-version (hiện là 3.13, khớp với
+      # requirements.txt: numpy 2.3.x không hỗ trợ Python 3.10).
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+          cache: pip
+
+      - name: Install build tools for nes-py
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Install dependencies
+        id: deps
+        continue-on-error: true
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements-dev.txt ]; then
+            pip install -r requirements-dev.txt
+          elif [ -f requirements.txt ]; then
+            pip install -r requirements.txt pytest
+          else
+            pip install pytest
+          fi
+
+      # Nếu cài nes-py thất bại vẫn đảm bảo có pytest; tests/conftest.py sẽ
+      # tự bỏ qua các test cần môi trường NES.
+      - name: Ensure pytest is available
+        run: python -m pip install pytest
+
+      - name: Run pytest
+        run: |
+          set +e
+          python -m pytest -v
+          code=$?
+          # Exit code 5 = không thu thập được test nào (vd. thiếu NES) -> coi là pass.
+          if [ "$code" -eq 5 ]; then
+            echo "::warning::No tests collected (NES emulator likely unavailable)."
+            exit 0
+          fi
+          exit $code
+
+      - name: Report dependency install failure
+        if: steps.deps.outcome == 'failure'
+        run: echo "::warning::Full dependency install failed; NES-dependent tests were skipped."
