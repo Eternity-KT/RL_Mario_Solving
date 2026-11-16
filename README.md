@@ -57,6 +57,9 @@ phần tiếp theo bổ sung.
 
 ```text
 RL_Mario_Solving/
+├── .github/
+│   ├── workflows/tests.yml  # CI: chạy pytest trên mỗi push/PR vào main
+│   └── pull_request_template.md
 ├── configs/
 │   ├── env.json             # Cấu hình môi trường mặc định (7 hành động)
 │   └── env_two_actions.json # Cấu hình 2 hành động
@@ -66,7 +69,7 @@ RL_Mario_Solving/
 │   ├── models/              # Nơi Người 2 bổ sung mạng
 │   ├── rewards/             # Nơi Người 3 bổ sung reward shaping
 │   └── utils/               # Tiện ích chung
-├── tests/                   # Kiểm thử wrapper và game thật
+├── tests/                   # Kiểm thử wrapper và game thật (conftest.py tự bỏ qua test cần NES nếu thiếu)
 ├── docs/ENVIRONMENT.md      # Hợp đồng API và hướng dẫn bàn giao
 ├── checkpoints/             # Trọng số sau này
 ├── recordings/              # Ảnh/video đầu ra
@@ -74,8 +77,19 @@ RL_Mario_Solving/
 ├── results/                 # JSON benchmark sinh tự động
 ├── baseline_random.py       # Chạy random agent, đo tốc độ/RAM
 ├── requirements.txt
-└── requirements-dev.txt
+├── requirements-dev.txt
+└── CONTRIBUTING.md          # Quy ước branch, commit, Pull Request
 ```
+
+## Đóng góp mã nguồn
+
+Trước khi code, mọi thành viên đọc [CONTRIBUTING.md](CONTRIBUTING.md). Tóm tắt:
+
+- `main` được bảo vệ, chỉ nhận thay đổi qua PR; làm việc trên
+  `feature/<nguoi>-<mo-ta>`, `fix/<mo-ta>` hoặc `docs/<mo-ta>` tạo từ `main`.
+- Commit theo Conventional Commits: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`.
+- Mỗi PR cần ít nhất 1 người review và `pytest` phải pass trước khi merge.
+- Không commit checkpoint, video, log TensorBoard hay đường dẫn cứng.
 
 ---
 
