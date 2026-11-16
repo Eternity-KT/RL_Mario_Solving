@@ -4,4 +4,5 @@ pythonpath = ["."]
 addopts = "-ra"
 markers = [
     "integration: exercises the installed NES emulator and Mario environment",
+    "slow: long-running checks (deselect with -m \"not slow\")",
 ]
