@@ -1,5 +1,0 @@
--r requirements.txt
-
-PyYAML==6.0.3
-tensorboard==2.21.0
-tensorboardX==2.6.5
