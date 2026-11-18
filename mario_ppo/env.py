@@ -13,7 +13,8 @@ import gymnasium as gym
 import mo_gymnasium as mo
 
 from mario_ppo.wrappers import (ACTION_SETS, ButtonActions, DeathPenaltyFix, FrameSkip, GrayResize,
-                                RandomNoopStart, RecordFrames, ScalarizeReward, XPosWrapFix)
+                                NoProgressTruncation, RandomNoopStart, RecordFrames, ScalarizeReward,
+                                XPosWrapFix)
 
 # [x_pos, time, death, coin, enemy]; môi trường đã co giãn mỗi thành phần theo hệ số 5/150.
 DEFAULT_WEIGHTS = (1.0, 1.0, 2.0, 0.05, 0.05)
@@ -39,9 +40,8 @@ def make_env(level="1-1", seed=None, actions="simple", frame_skip=4, frame_stack
     env = ButtonActions(env, ACTION_SETS[actions])
     env = FrameSkip(env, skip=frame_skip)
     if not eval_mode:
-        # ---- mẹo huấn luyện của nhóm (tùy chọn), ví dụ: ----
-        # if tricks.get("max_no_progress_steps"):
-        #     env = NoProgressTruncation(env, tricks["max_no_progress_steps"])
+        if tricks.get("max_no_progress_steps"):
+            env = NoProgressTruncation(env, max_steps=tricks["max_no_progress_steps"])
         if noop_max:
             env = RandomNoopStart(env, noop_max)
     env = ScalarizeReward(env, weights)

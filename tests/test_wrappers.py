@@ -1,9 +1,9 @@
-"""Kiểm tra các wrapper tiền xử lý: FrameSkip, GrayResize, ScalarizeReward."""
+"""Kiểm tra các wrapper tiền xử lý và cắt lượt khi Mario bị kẹt."""
 import gymnasium as gym
 import numpy as np
 import pytest
 
-from mario_ppo.wrappers import FrameSkip, GrayResize, ScalarizeReward
+from mario_ppo.wrappers import FrameSkip, GrayResize, NoProgressTruncation, ScalarizeReward
 
 
 class _FakeMarioEnv(gym.Env):
@@ -64,6 +64,29 @@ def test_frameskip_stops_at_episode_end():
     assert np.allclose(reward, 3 * np.arange(1, 6))
 
 
+def test_frameskip_pools_reused_frames_until_truncation():
+    class _ReusedFrame(_FakeMarioEnv):
+        frame = np.zeros((240, 256, 3), np.uint8)
+
+        def step(self, action):
+            obs, reward, _, _, info = super().step(action)
+            self.frame[:] = obs
+            return self.frame, reward.astype(np.float64), False, self.k == 3, info
+
+    frames = np.zeros((4, 240, 256, 3), np.uint8)
+    frames[1, 0, 0] = 250  # Khung thứ nhất không được lấy max.
+    frames[2, 0, 1] = 100
+    frames[3, 0, 2] = 200
+    env = FrameSkip(_ReusedFrame(pattern=frames), skip=4)
+    env.reset()
+    obs, reward, terminated, truncated, info = env.step(1)
+    assert not terminated and truncated and info["x_pos"] == 3
+    assert env.unwrapped.actions == [1, 1, 1]
+    assert obs[0, :3, 0].tolist() == [0, 100, 200]
+    assert reward.dtype == np.float32
+    assert np.allclose(reward, 6 * np.arange(1, 6))
+
+
 def test_grayresize_shape_dtype_and_brightness():
     env = GrayResize(FrameSkip(_FakeMarioEnv(), skip=1), size=84)
     assert env.observation_space.shape == (84, 84)
@@ -100,3 +123,41 @@ def test_scalarize_reward_dot_product_and_info():
 def test_scalarize_reward_rejects_wrong_weight_count():
     with pytest.raises(ValueError):
         ScalarizeReward(_FakeMarioEnv(), [1.0, 2.0])
+
+
+class _ProgressEnv(_FakeMarioEnv):
+    def __init__(self, positions, end_at=None):
+        super().__init__(end_at=end_at)
+        self.positions = positions
+
+    def reset(self, **kwargs):
+        obs, info = super().reset(**kwargs)
+        return obs, dict(info, x_pos=self.positions[0])
+
+    def step(self, action):
+        obs, reward, terminated, truncated, info = super().step(action)
+        return obs, reward, terminated, truncated, dict(info, x_pos=self.positions[self.k])
+
+
+def test_no_progress_truncates_at_threshold_and_resets():
+    env = NoProgressTruncation(_ProgressEnv([50, 52, 53, 51, 55]), max_steps=2)
+    env.reset(seed=7)
+    for _ in range(3):
+        assert env.step(0)[2:4] == (False, False)
+    assert env.step(0)[2:4] == (False, True)
+    env.reset(seed=7)
+    assert env.step(0)[2:4] == (False, False)
+
+
+def test_no_progress_starts_counting_after_first_known_position():
+    env = NoProgressTruncation(_FakeMarioEnv(), max_steps=1)
+    env.reset()
+    assert env.step(0)[2:4] == (False, False)
+    assert env.step(0)[2:4] == (False, True)
+
+
+def test_no_progress_preserves_native_termination_at_threshold():
+    env = NoProgressTruncation(_ProgressEnv([50, 50, 50], end_at=2), max_steps=2)
+    env.reset()
+    assert env.step(0)[2:4] == (False, False)
+    assert env.step(0)[2:4] == (True, False)

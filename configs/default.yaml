@@ -18,6 +18,7 @@ env:
   # [x_pos, time, death, coin, enemy]
   weights: [1.0, 1.0, 2.0, 0.05, 0.05]
   noop_max: 30          # 0..30 bước NOOP ngẫu nhiên đầu mỗi lượt khi huấn luyện
+  max_no_progress_steps: 0  # 0 = tắt, đặt 200 để cắt lượt khi Mario bị kẹt
   normalize_reward: true
 
 model: {}               # tham số thêm cho ActorCritic(...) nếu nhóm cần
