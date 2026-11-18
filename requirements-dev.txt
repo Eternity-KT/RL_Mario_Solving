@@ -1,0 +1,3 @@
+# Dependencies cho môi trường phát triển & CI/CD
+-e .
+pytest>=8.0
