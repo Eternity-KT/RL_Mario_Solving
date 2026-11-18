@@ -1,250 +1,224 @@
-# SỔ TAY KỸ THUẬT & QUY TRÌNH LÀM VIỆC CHI TIẾT - NGƯỜI 1
-## VAI TRÒ: CHUYÊN GIA MÔI TRƯỜNG, TIỀN XỬ LÝ DỮ LIỆU & NỀN TẢNG TRIỂN KHAI (ENVIRONMENT & PREPROCESSING LEAD)
+# SỔ TAY KỸ THUẬT & PHÂN CÔNG TÁC CHIẾN 14 NGÀY - NGƯỜI 1
+## VAI TRÒ: CHUYÊN GIA MÔI TRƯỜNG & TIỀN XỬ LÝ DỮ LIỆU (ENVIRONMENT & PREPROCESSING LEAD)
+### Đồ án: Dạy Super Mario Bros vượt màn bằng PPO (PyTorch) - Học phần Học tăng cường
 
 ---
 
-## I. THÔNG TIN CHUNG & VAI TRÒ TRÁCH NHIỆM
+## I. THÔNG TIN CHUNG & TRÁCH NHIỆM CỐT LÕI
 
 - **Họ và tên thành viên:** [Điền tên Thành viên 1]
-- **Vai trò chuyên trách:** Kỹ sư Môi trường & Tiền xử lý dữ liệu (Environment & Preprocessing Engineer).
-- **Trách nhiệm cốt lõi:**
-  1. Xây dựng môi trường giả lập NES Super Mario Bros tương thích 100% với chuẩn **Gymnasium** hiện đại nhất.
-  2. Thiết kế và triển khai toàn bộ pipeline tiền xử lý khung hình (Grayscale, Resize $84 \times 84$, FrameSkip = 4, FrameStack = 4).
-  3. Chuẩn hóa không gian hành động rời rạc (JoypadSpace sang 7 hành động tối ưu `SIMPLE_MOVEMENT`).
-  4. Đóng gói hàm khởi tạo môi trường tiêu chuẩn `make_mario_env()` để toàn bộ nhóm (Người 2, 3, 4) sử dụng thống nhất.
-  5. Xây dựng bộ script baseline kiểm thử môi trường (FPS, mức tiêu hao RAM/VRAM, tính ổn định qua hàng triệu steps).
-  6. Soạn thảo các chương liên quan đến Môi trường và Tiền xử lý trong Báo cáo học thuật (Chương 1, 3, 9) và thuyết trình phần tương ứng trên Slide.
+- **Vai trò chuyên trách:** Chuyên gia Môi trường & Tiền xử lý dữ liệu.
+- **Tệp mã nguồn sở hữu chính:** `mario_ppo/wrappers.py` (Toàn quyền tác giả).
+- **Tệp mã nguồn phối hợp:** `mario_ppo/env.py` (Phối hợp với Người 4 để thiết lập chuỗi wrapper và mẹo huấn luyện).
+- **Bộ bài kiểm tra đơn vị cá nhân:** `tests/test_wrappers.py` (Bắt buộc PASS 7/7 bài test).
+- **Mục tiêu điểm số đóng góp:** Đạt trọn vẹn 6/6 điểm phần Wrappers trong Hạng mục A (Cài đặt thuật toán); đóng góp Mục 1 và Mục 5 trong Báo cáo học thuật (25 điểm).
 
 ---
 
-## II. BẢN ĐỒ KIẾN THỨC & CÔNG CỤ CẦN THÀNH THẠO
+## II. ĐẶC TẢ KỸ THUẬT CÁC HÀM CẦN CÀI ĐẶT TRONG `mario_ppo/wrappers.py`
 
-### 1. Kiến thức lý thuyết bắt buộc
-- **Cơ chế hoạt động của Máy chơi game NES (Nintendo Entertainment System):**
-  - Tần số khung hình gốc: 60 FPS (NTSC).
-  - Độ phân giải gốc: $256 \times 240$ pixels, 3 kênh màu RGB.
-  - Hiện tượng chớp hình (Sprite Flickering): Chip PPU của NES chỉ vẽ được tối đa 8 sprites trên một đường quét ngang, dẫn đến các vật thể nhấp nháy luân phiên giữa 2 khung hình liên tiếp. Cần cơ chế lấy giá trị cực đại (Max-pooling) giữa 2 frame cuối cùng khi skip frame.
-- **Chuẩn giao tiếp Gymnasium vs Gym truyền thống:**
-  - `reset()`: Gym cũ trả về `obs`, Gymnasium trả về `(obs, info)`.
-  - `step(action)`: Gym cũ trả về `obs, reward, done, info` (4 giá trị). Gymnasium trả về `obs, reward, terminated, truncated, info` (5 giá trị). Trong đó `terminated` là kết thúc do luật chơi (chết hoặc thắng), `truncated` là kết thúc do giới hạn thời gian (time limit).
-- **Lý thuyết Markov Decision Process (MDP) trong xử lý hình ảnh:**
-  - Khung hình đơn lẻ là POMDP (Partially Observable MDP) vì không thể hiện vận tốc.
-  - Frame Stacking (ghép 4 khung hình) khôi phục tính chất Markov đầy đủ: $P(s_{t+1} | s_t, a_t) = P(s_{t+1} | s_t, s_{t-1}, ..., s_0, a_t)$.
+Người 1 chịu trách nhiệm hiện thực hóa 3 lớp Wrapper kế thừa từ Gymnasium trong `mario_ppo/wrappers.py`. Đây là tầng tiếp xúc trực tiếp với môi trường `mo-supermario-v0`.
 
-### 2. Công cụ và Thư viện sử dụng
-- `gym-super-mario-bros` (v7.4.0) & `nes-py` (v8.2.1)
-- `gymnasium` (v0.29.1 hoặc v1.0.0+) & `shimmy`
-- `opencv-python` (`cv2`) cho việc resize và nội suy bilinear ảnh nhanh
-- `numpy` cho các phép biến đổi mảng đa chiều
-- `torchvision.transforms` (nếu tiền xử lý trực tiếp trên GPU)
+```
+[Môi trường NES mo-supermario-v0] (Frame RGB 240x256x3, Reward vector 5 chiều)
+       │
+       ▼
+[DeathPenaltyFix] (Có sẵn: Vá lỗi phạt chết -25)
+       │
+       ▼
+[XPosWrapFix] (Có sẵn: Vá lỗi tràn tọa độ x 16-bit)
+       │
+       ▼
+[ButtonActions] (Có sẵn: Ánh xạ bitmask NES sang 7 phím tập 'simple')
+       │
+       ▼
+[FrameSkip(skip=4)] ───> [NGƯỜI 1 CÀI ĐẶT: Max 2 frame cuối, cộng dồn vector reward]
+       │
+       ├── [NẾU HUẤN LUYỆN (if not eval_mode)]:
+       │     ├─ [Mẹo: NoProgressTruncation] ──> [NGƯỜI 1 VIẾT BỔ SUNG Ở CUỐI TỆP]
+       │     └─ [RandomNoopStart(0..30)] (Có sẵn)
+       │
+       ▼
+[ScalarizeReward(weights)] ───> [NGƯỜI 1 CÀI ĐẶT: Tích vô hướng w · r đổi vector thành số thực]
+       │
+       ▼
+[GrayResize(size=84)] ───> [NGƯỜI 1 CÀI ĐẶT: RGB -> Grayscale Luminance, resize 84x84 uint8]
+       │
+       ▼
+[FrameStackObservation(4)] (Chuẩn Gymnasium: Ghép thành tensor (4, 84, 84))
+       │
+       ▼
+[Đầu vào ActorCritic]
+```
+
+### 1. Cài đặt lớp `FrameSkip(gym.Wrapper)`
+
+- **Mục đích:** Mario đưa ra quyết định hành động ở tần số thấp hơn tần số khung hình gốc của NES (60 FPS). Lặp lại hành động `skip=4` lần giúp giảm 4 lần số bước tác tử cần học và tăng tốc độ thu thập dữ liệu lên gấp nhiều lần.
+- **Đặc tả logic hàm `step(self, action)`:**
+  1. Khởi tạo `total_reward = 0.0` (dạng `np.float32` có kích thước bằng với vector reward gốc, tức vector 5 phần tử).
+  2. Tạo danh sách hoặc bộ đệm lưu trữ 2 khung hình gần nhất: `obs_buffer = []`.
+  3. Lặp `for i in range(self.skip)`:
+     - Gọi `obs, reward, terminated, truncated, info = self.env.step(action)`
+     - Cộng dồn phần thưởng: `total_reward = total_reward + np.array(reward, dtype=np.float32)`
+     - Đưa khung hình vào bộ đệm: `obs_buffer.append(obs)`. Nếu bộ đệm vượt quá 2 phần tử, loại bỏ phần tử cũ nhất (`obs_buffer = obs_buffer[-2:]`).
+     - **Dừng sớm (Early exit):** Nếu `terminated or truncated` là `True`, lập tức `break` khỏi vòng lặp, không tiếp tục lặp các khung tiếp theo.
+  4. Tính quan sát trả về:
+     - Nếu bộ đệm có 2 khung: `max_frame = np.maximum(obs_buffer[0], obs_buffer[1])` (Lấy max theo từng điểm ảnh pixel-wise).
+     - Nếu chỉ chạy được 1 khung hình (do kết thúc ngay khung đầu): `max_frame = obs_buffer[0]`.
+  5. Trả về: `max_frame, total_reward, terminated, truncated, info`.
+
+> **Ý nghĩa học thuật:** Máy chơi game NES thập niên 80 áp dụng cơ chế nhấp nháy sprite (sprite flickering) luân phiên hiển thị giữa các khung chẵn và lẻ để tránh tràn giới hạn phần cứng. Phép lấy `np.maximum` của 2 khung cuối đảm bảo không bao giờ bị mất dấu Mario hoặc quái vật Goomba.
 
 ---
 
-## III. THIẾT KẾ KỸ THUẬT & CODE TEMPLATES CỦA BỘ TIỀN XỬ LÝ (WRAPPERS)
+### 2. Cài đặt lớp `GrayResize(gym.ObservationWrapper)`
 
-Người 1 chịu trách nhiệm viết file `src/env/wrappers.py` với cấu trúc chuẩn mực sau:
+- **Mục đích:** Giảm kích thước đầu vào mạng nơ-ron từ ảnh màu RGB $240 \times 256 \times 3$ xuống ảnh xám $84 \times 84 \times 1$ mà vẫn bảo toàn đầy đủ các đặc trưng cấu trúc địa hình và vật thể.
+- **Đặc tả logic `__init__(self, env, size=84)`:**
+  1. Gọi `super().__init__(env)`
+  2. Lưu `self.size = size`
+  3. Cập nhật lại không gian quan sát:
+     ```python
+     self.observation_space = gym.spaces.Box(
+         low=0, high=255, shape=(size, size), dtype=np.uint8
+     )
+     ```
+- **Đặc tả logic hàm `observation(self, obs)`:**
+  1. Chuyển đổi ảnh RGB sang ảnh xám theo độ chói Luminance bằng OpenCV:
+     ```python
+     gray = cv2.cvtColor(obs, cv2.COLOR_RGB2GRAY)
+     ```
+     *(Tuyệt đối không lấy trung bình cộng `obs.mean(axis=-1)` vì công thức độ chói $Y = 0.299R + 0.587G + 0.114B$ phản ánh chính xác độ tương phản thực tế giữa Mario, kẻ thù và nền trời).*
+  2. Resize ảnh xám về kích thước `(size, size)`:
+     ```python
+     resized = cv2.resize(gray, (self.size, self.size), interpolation=cv2.INTER_AREA)
+     ```
+  3. Đảm bảo mảng trả về có kiểu dữ liệu `np.uint8` và shape `(size, size)`.
 
-### 1. Custom Wrapper tương thích Gymnasium: `GymnasiumCompatibilityWrapper`
+---
+
+### 3. Cài đặt lớp `ScalarizeReward(gym.Wrapper)`
+
+- **Mục đích:** Thuật toán PPO tiêu chuẩn tối ưu hóa một hàm phần thưởng vô hướng. Môi trường `mo-supermario-v0` trả về vector 5 mục tiêu $[x\_pos, time, death, coin, enemy]$. Wrapper này chuyển vector thành số thực thông qua tích vô hướng $w \cdot r$.
+- **Đặc tả logic `__init__(self, env, weights)`:**
+  1. Gọi `super().__init__(env)`
+  2. Chuyển đổi weights thành mảng numpy float32: `self.weights = np.array(weights, dtype=np.float32)`
+  3. Kiểm tra tính hợp lệ của số lượng trọng số:
+     - Số lượng mục tiêu dự kiến: `num_objectives = env.unwrapped.reward_space.shape[0]` (nếu không có thì mặc định là 5).
+     - Nếu `len(self.weights) != num_objectives`: Ném ngoại lệ `raise ValueError(f"weights count {len(self.weights)} != {num_objectives}")`.
+- **Đặc tả logic hàm `step(self, action)`:**
+  1. Gọi `obs, reward, terminated, truncated, info = self.env.step(action)`
+  2. Sao lưu vector phần thưởng gốc:
+     ```python
+     info = dict(info)
+     info["vector_reward"] = np.array(reward, dtype=np.float32)
+     ```
+  3. Tính tích vô hướng chuyển thành số thực chuẩn Python:
+     ```python
+     scalar_reward = float(np.dot(self.weights, reward))
+     ```
+  4. Trả về: `obs, scalar_reward, terminated, truncated, info`.
+
+---
+
+### 4. Triển khai Mẹo huấn luyện bổ sung (Tùy chọn ở cuối `wrappers.py`)
+
+Viết thêm lớp `NoProgressTruncation(gym.Wrapper)` ở cuối tệp:
 ```python
-import gymnasium as gym
-from gymnasium import spaces
-import numpy as np
-
-class GymnasiumCompatibilityWrapper(gym.Wrapper):
-    """
-    Chuyển đổi môi trường nes-py/gym cũ sang chuẩn Gymnasium (5 giá trị trả về trong step).
-    """
-    def __init__(self, env):
+class NoProgressTruncation(gym.Wrapper):
+    """Cắt ngắn lượt chơi (truncated=True) nếu Mario không tiến lên phía trước
+    quá max_steps bước tác tử liên tiếp. Giúp Mario thoát khỏi việc bị kẹt ở chân ống nước."""
+    def __init__(self, env, max_steps=200):
         super().__init__(env)
-        # Giữ nguyên observation_space và action_space
-        self.observation_space = spaces.Box(
-            low=0, high=255, shape=env.observation_space.shape, dtype=np.uint8
-        )
-        self.action_space = spaces.Discrete(env.action_space.n)
+        self.max_steps = max_steps
+        self.steps_without_progress = 0
+        self.max_x = 0
 
     def reset(self, **kwargs):
-        obs = self.env.reset()
-        if isinstance(obs, tuple):
-            return obs
-        info = {}
-        return obs, info
+        self.steps_without_progress = 0
+        self.max_x = 0
+        return self.env.reset(**kwargs)
 
     def step(self, action):
-        state, reward, done, info = self.env.step(action)
-        # Tách cờ done thành terminated (chết hoặc thắng cờ) và truncated (hết giờ)
-        terminated = done
-        truncated = False
-        if info.get('time', 1) <= 0:
-            truncated = True
-            terminated = False
-        return state, float(reward), terminated, truncated, info
-```
-
-### 2. Wrapper giảm chiều dữ liệu: `GrayScaleAndResizeWrapper`
-```python
-import cv2
-
-class GrayScaleAndResizeWrapper(gym.ObservationWrapper):
-    """
-    Chuyển đổi ảnh màu 240x256x3 sang ảnh xám 84x84x1 để tối ưu bộ nhớ và tính toán.
-    """
-    def __init__(self, env, width=84, height=84):
-        super().__init__(env)
-        self.width = width
-        self.height = height
-        self.observation_space = spaces.Box(
-            low=0, high=255, shape=(height, width, 1), dtype=np.uint8
-        )
-
-    def observation(self, obs):
-        # Chuyển đổi RGB sang Grayscale
-        gray = cv2.cvtColor(obs, cv2.COLOR_RGB2GRAY)
-        # Resize về 84x84 sử dụng phép nội suy diện tích (INTER_AREA)
-        resized = cv2.resize(gray, (self.width, self.height), interpolation=cv2.INTER_AREA)
-        return np.expand_dims(resized, axis=-1)
-```
-
-### 3. Wrapper FrameSkip & FrameStack: `CustomFrameSkipAndStackWrapper`
-```python
-from collections import deque
-
-class FrameSkipAndStackWrapper(gym.Wrapper):
-    """
-    Bỏ qua k khung hình (FrameSkip=4), lấy max giữa 2 frame cuối để loại bỏ flickering,
-    và xếp chồng k khung hình liên tiếp tạo thành tensor kích thước (4, 84, 84).
-    """
-    def __init__(self, env, skip=4, stack=4):
-        super().__init__(env)
-        self.skip = skip
-        self.stack = stack
-        self.obs_buffer = deque(maxlen=2)
-        self.frames = deque(maxlen=stack)
-        
-        # Không gian quan sát đầu ra có shape là (stack, 84, 84) - Channel First cho PyTorch
-        self.observation_space = spaces.Box(
-            low=0, high=255, shape=(stack, 84, 84), dtype=np.uint8
-        )
-
-    def reset(self, **kwargs):
-        obs, info = self.env.reset(**kwargs)
-        # obs có shape (84, 84, 1) -> squeeze thành (84, 84)
-        obs_sq = np.squeeze(obs, axis=-1)
-        for _ in range(self.stack):
-            self.frames.append(obs_sq)
-        return np.array(self.frames, dtype=np.uint8), info
-
-    def step(self, action):
-        total_reward = 0.0
-        terminated = False
-        truncated = False
-        info = {}
-
-        for i in range(self.skip):
-            obs, reward, term, trunc, info = self.env.step(action)
-            total_reward += reward
-            self.obs_buffer.append(np.squeeze(obs, axis=-1))
-            if term or trunc:
-                terminated = term
-                truncated = trunc
-                break
-
-        # Max pooling giữa 2 khung hình cuối để xử lý lỗi nhấp nháy hình NES
-        if len(self.obs_buffer) == 2:
-            max_frame = np.maximum(self.obs_buffer[0], self.obs_buffer[1])
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        curr_x = info.get("x_pos", 0)
+        if curr_x > self.max_x + 2:
+            self.max_x = curr_x
+            self.steps_without_progress = 0
         else:
-            max_frame = self.obs_buffer[0]
-
-        self.frames.append(max_frame)
-        stacked_obs = np.array(self.frames, dtype=np.uint8)
-        return stacked_obs, total_reward, terminated, truncated, info
-```
-
-### 4. Hàm đóng gói tổng thể: `src/env/make_env.py`
-```python
-import gym_super_mario_bros
-from gym_super_mario_bros.actions import SIMPLE_MOVEMENT, RIGHT_ONLY
-from nes_py.wrappers import JoypadSpace
-from src.env.wrappers import (
-    GymnasiumCompatibilityWrapper,
-    GrayScaleAndResizeWrapper,
-    FrameSkipAndStackWrapper
-)
-
-def make_mario_env(world=1, stage=1, action_type='SIMPLE'):
-    """
-    Hàm chuẩn hóa để toàn bộ nhóm khởi tạo môi trường Mario đồng nhất.
-    """
-    env_id = f'SuperMarioBros-{world}-{stage}-v0'
-    env = gym_super_mario_bros.make(env_id)
-    
-    # 1. Rút gọn không gian hành động
-    if action_type == 'RIGHT_ONLY':
-        env = JoypadSpace(env, RIGHT_ONLY)
-    else:
-        env = JoypadSpace(env, SIMPLE_MOVEMENT)
-        
-    # 2. Bọc tương thích Gymnasium
-    env = GymnasiumCompatibilityWrapper(env)
-    
-    # 3. Tiền xử lý ảnh xám và Resize 84x84
-    env = GrayScaleAndResizeWrapper(env, width=84, height=84)
-    
-    # 4. Skip frame 4 và Stack frame 4
-    env = FrameSkipAndStackWrapper(env, skip=4, stack=4)
-    
-    return env
+            self.steps_without_progress += 1
+            if self.steps_without_progress >= self.max_steps:
+                truncated = True
+        return obs, reward, terminated, truncated, info
 ```
 
 ---
 
-## IV. LỘ TRÌNH THỰC HIỆN CHI TIẾT THEO TỪNG TUẦN (WEEKLY SPRINT)
+## III. QUY TRÌNH KIỂM THỬ VÀ LỆNH CHẠY CỦA NGƯỜI 1
 
-| Tuần | Mục tiêu tuần | Danh sách đầu việc cụ thể (Action Items) | File tạo ra / Chỉnh sửa | Bàn giao cho ai | Tiêu chí hoàn thành (DoD) |
-| :---: | :--- | :--- | :--- | :--- | :--- |
-| **Tuần 1** | Thiết lập môi trường & Wrappers | - Nghiên cứu nes-py, gymnasium, giải quyết lỗi build MSVC trên Windows.<br>- Viết `requirements.txt` cố định version thư viện.<br>- Hoàn thiện `wrappers.py` và `make_env.py`.<br>- Viết script `baseline_random.py` test FPS. | `src/env/wrappers.py`<br>`src/env/make_env.py`<br>`requirements.txt`<br>`baseline_random.py` | Cả nhóm (Người 2, 3, 4) | - Môi trường chạy $\ge 60$ FPS.<br>- Tensor output chuẩn `(4, 84, 84)`.<br>- 4 máy cài đặt thành công. |
-| **Tuần 2** | Hỗ trợ tích hợp Alpha & Viết báo cáo | - Phối hợp Người 2 kiểm tra tensor flow vào mạng PyTorch.<br>- Hỗ trợ Người 3 tích hợp `CustomRewardWrapper`.<br>- Viết bản thảo Chương 1 (Tổng quan) và Chương 3 (Mô tả bài toán & Tiền xử lý). | `docs/chapter1.md`<br>`docs/chapter3.md`<br>`tests/test_env.py` | Người 4 (Tổng hợp báo cáo) | - Không phát sinh lỗi kích thước tensor.<br>- Hoàn thành 100% bản thảo 2 chương. |
-| **Tuần 3** | Tối ưu hóa FPS & Sửa lỗi bẫy môi trường | - Kiểm tra hiện tượng ngốn RAM khi chạy môi trường qua $1.0\times 10^6$ steps.<br>- Phối hợp với Người 3 phân tích dữ liệu tọa độ X, thời gian game để nhận diện bẫy kẹt ống nước.<br>- Rà soát điều kiện cờ chiến thắng (`flag_get == True`). | `src/env/wrappers.py`<br>`src/env/make_env.py` | Người 3 | - Mức tiêu hao RAM ổn định $< 1.5$ GB.<br>- Cơ chế nhận diện thắng cờ hoạt động chuẩn xác 100%. |
-| **Tuần 4** | Triển khai môi trường cho thí nghiệm mở rộng | - Tạo môi trường với biến thể hành động `RIGHT_ONLY` phục vụ Ablation Study của Người 3.<br>- Thử nghiệm tạo môi trường World 1-2 để đánh giá khả năng tổng quát hóa (Generalization).<br>- Viết bản thảo Chương 9 (Hạn chế & Hướng phát triển). | `src/env/make_env.py`<br>`docs/chapter9.md` | Người 2, 3, 4 | - Cung cấp đủ 2 biến thể môi trường cho thí nghiệm 2 điểm cộng.<br>- Hoàn thành bản thảo Chương 9. |
-| **Tuần 5** | Rà soát kỹ thuật, Hoàn thiện Báo cáo & Luyện tập Slide | - Rà soát toàn bộ docstrings của module `src/env/`.<br>- Chuẩn hóa các hình vẽ sơ đồ tiền xử lý khung hình cho Báo cáo và Slide.<br>- Luyện tập bài nói 5 phút về Môi trường và Tiền xử lý.<br>- Tham gia 2 buổi Mock Defense. | Mã nguồn sạch sẽ,<br>Slide phần 1,<br>Nội dung thuyết trình | Cả nhóm | - Trả lời lưu loát 100% các câu hỏi về môi trường và MDP.<br>- Thuyết trình đúng 5 phút. |
+Người 1 phải kiểm tra liên tục trên terminal:
 
----
+```powershell
+# Kích hoạt môi trường ảo
+.\.venv\Scripts\activate
 
-## V. NHỮNG LỖI THƯỜNG GẶP VÀ CÁCH KHẮC PHỤC TRIỆT ĐỂ (TROUBLESHOOTING)
+# 1. Kiểm tra toàn bộ 7 bài test wrapper
+pytest -q tests/test_wrappers.py
 
-1. **Lỗi `Microsoft Visual C++ 14.0 or greater is required` khi cài `nes-py` trên Windows:**
-   - *Nguyên nhân:* `nes-py` chứa mã nguồn C++ của giả lập FCEU. Khi cài đặt trên Python phiên bản mới (3.12, 3.13) mà chưa có pre-built binary wheel, pip sẽ tự biên dịch và yêu cầu bộ build tools C++.
-   - *Giải pháp:*
-     - *Cách 1 (Khuyến nghị số 1):* Tạo môi trường ảo với Python 3.10 hoặc 3.11 (`conda create -n mario_rl python=3.10 -y`), ở phiên bản này `nes-py` đã có wheel dựng sẵn, cài đặt chỉ trong 5 giây.
-     - *Cách 2:* Cài đặt gói `Visual Studio Build Tools` chọn workload `Desktop development with C++`.
-2. **Lỗi `ValueError: not enough values to unpack (expected 5, got 4)` khi gọi `env.step()`:**
-   - *Nguyên nhân:* Do thư viện `gym-super-mario-bros` vốn được viết theo chuẩn OpenAI Gym cũ (`step()` chỉ trả về 4 biến: `obs, reward, done, info`), trong khi code vòng lặp hoặc Stable-Baselines3 / Gymnasium mới yêu cầu 5 biến (`obs, reward, terminated, truncated, info`).
-   - *Giải pháp:* Người 1 bắt buộc phải bọc môi trường qua `GymnasiumCompatibilityWrapper` như đã lập trình ở mục III.1.
-3. **Hiện tượng rò rỉ bộ nhớ (Memory Leak) sau vài trăm episode:**
-   - *Nguyên nhân:* Trong các wrapper có lưu trữ `deque` hoặc danh sách frames nhưng không giải phóng đúng cách khi gọi `reset()`, hoặc lưu toàn bộ ảnh float32 thay vì uint8.
-   - *Giải pháp:* Luôn ép kiểu ảnh xám về `np.uint8` (1 byte mỗi pixel thay vì 4 byte float). Gọi `self.obs_buffer.clear()` và khởi tạo lại deque trong hàm `reset()`.
+# 2. Kiểm tra chi tiết từng chức năng
+pytest -q -k frameskip
+pytest -q -k grayresize
+pytest -q -k scalarize
+
+# 3. Kiểm tra không gian quan sát khi ghép chuỗi
+python -c "from mario_ppo.env import make_env; env = make_env('1-1'); obs, _ = env.reset(); print('Observation shape:', obs.shape, 'dtype:', obs.dtype)"
+# Kết quả mong đợi: Observation shape: (4, 84, 84) dtype: uint8
+```
 
 ---
 
-## VI. BỘ CÂU HỎI VẤN ĐÁP DÀNH RIÊNG CHO NGƯỜI 1
+## IV. LỘ TRÌNH 14 NGÀY CHI TIẾT CỦA NGƯỜI 1
 
-Khi hội đồng phản biện chất vấn về phần Môi trường và Tiền xử lý, Người 1 cần trả lời tự tin và chính xác theo các gợi ý sau:
-
-- **Câu hỏi 1: Tại sao không dùng trực tiếp ảnh màu RGB $240 \times 256$ mà phải chuyển về Grayscale $84 \times 84$?**
-  - *Trả lời:* Ảnh màu $240 \times 256 \times 3$ có tới $184,320$ giá trị đầu vào cho mỗi khung hình. Khi chuyển về ảnh xám $84 \times 84 \times 1$, số điểm ảnh chỉ còn $7,056$ giá trị (giảm hơn $96\%$ kích thước dữ liệu). Trong Super Mario Bros, các thông tin sống còn để điều khiển tác nhân (vị trí Mario, khoảng cách tới quái vật Goomba, mép hố sâu, ống nước) đều được biểu diễn đầy đủ qua sự tương phản hình khối và độ sáng, màu sắc của gạch hay áo Mario không đem lại thêm giá trị quyết định hành vi. Việc giảm chiều giúp giảm hàng chục triệu tham số của mạng CNN, tăng tốc độ tính toán gấp $5-10$ lần và hạn chế nguy cơ quá khớp (overfitting).
-- **Câu hỏi 2: Giải thích cơ chế Frame Skip = 4. Tại sao bỏ qua 4 khung hình mà Mario không bị đâm vào quái vật?**
-  - *Trả lời:* NES chạy ở tần số 60 FPS, nghĩa là cứ khoảng 16.6 mili-giây lại có một khung hình mới. Với tốc độ di chuyển của Mario và Goomba, sự biến đổi vị trí trong 1-2 khung hình là cực kỳ nhỏ (vài pixel). Tác nhân không cần thiết và cũng không thể đưa ra một chiến lược mới sau mỗi 16ms. Bằng cách lặp lại hành động đó trong 4 khung hình liên tiếp và chỉ tính toán mạng nơ-ron ở khung hình thứ 4, tốc độ huấn luyện thực tế tăng lên gần 4 lần mà tác nhân vẫn đảm bảo phản xạ tốt trong khoảng thời gian $\approx 67$ms (nhanh hơn rất nhiều so với thời gian phản xạ trung bình của con người là $200-250$ms).
-- **Câu hỏi 3: Không gian hành động `SIMPLE_MOVEMENT` gồm những hành động gì và tại sao không dùng toàn bộ nút của tay cầm NES?**
-  - *Trả lời:* Tay cầm NES gốc có 8 nút bấm (A, B, Select, Start, Up, Down, Left, Right), tạo ra $2^8 = 256$ tổ hợp hành động khả dĩ. Tuy nhiên phần lớn các tổ hợp là vô nghĩa hoặc không hợp lệ (ví dụ: bấm đồng thời Left và Right, hoặc bấm Select/Start). `SIMPLE_MOVEMENT` cô đọng thành 7 hành động tối cần thiết để chơi game: Đứng yên, Sang phải, Nhảy phải, Chạy nhanh phải, Chạy nhanh nhảy phải, Nhảy tại chỗ, và Sang trái. Việc giảm không gian hành động từ 256 xuống 7 giúp không gian tìm kiếm chính sách thu hẹp cấp số nhân, giúp thuật toán Q-Learning hội tụ nhanh chóng trong thời gian 5 tuần.
+- **Ngày 1:** Họp nhóm, rà soát API `gymnasium.Wrapper`, đọc kỹ `mario_ppo/wrappers.py` và `tests/test_wrappers.py`.
+- **Ngày 2:** Viết phiên bản Alpha của `GrayResize` và `FrameSkip`.
+- **Ngày 3:** Hoàn thiện `ScalarizeReward`. Chạy `pytest -q tests/test_wrappers.py` đạt **7/7 PASS**. Bàn giao cho Người 4.
+- **Ngày 4:** Phối hợp Người 4 kiểm tra tính tương thích của wrappers với `make_env` trong `mario_ppo/env.py`.
+- **Ngày 5:** Hỗ trợ kiểm thử pipeline toàn diện (`pytest -q` đạt 30/30 PASS).
+- **Ngày 6:** Theo dõi tiến trình huấn luyện Màn 1-1, kiểm tra các khung hình hiển thị có bị lỗi sprite hay không.
+- **Ngày 7:** Viết và kích hoạt `NoProgressTruncation` trong khối `if not eval_mode:` của `env.py` nếu Mario bị kẹt ống nước.
+- **Ngày 8:** Kiểm tra các video `videos/step_*.mp4` của Màn 1-1 để đánh giá chất lượng tiền xử lý.
+- **Ngày 9:** Cùng Người 4 kiểm tra kết quả đánh giá Màn 1-1 (`ket-qua-1-1.json`). Thống nhất chọn Màn thưởng 1-2.
+- **Ngày 10:** Hỗ trợ Người 3 chuẩn bị môi trường cho Thí nghiệm so sánh đối chứng ($\gamma = 0.9$ vs $\gamma = 0.99$).
+- **Ngày 11:** Phân tích thất bại (Failure Analysis): Phân loại nguyên nhân Mario chết (rơi hố, va chạm Goomba, hết giờ).
+- **Ngày 12:** Hỗ trợ trích xuất video demo đẹp nhất của cả hai màn.
+- **Ngày 13:** Viết Mục 1 (Mô tả Wrapper) và Mục 5 (Phân tích thất bại) trong Báo cáo học thuật 8 trang. Soạn thảo Slide 1–3.
+- **Ngày 14:** Tham gia 2 buổi diễn tập thuyết trình và phản biện vấn đáp.
 
 ---
 
-## VII. CHECKLIST TỰ ĐÁNH GIÁ TIẾN ĐỘ CỦA NGƯỜI 1
+## V. BỘ CÂU HỎI VẤN ĐÁP DÀNH RIÊNG CHO NGƯỜI 1
 
-- [ ] Môi trường ảo hoạt động trơn tru trên cả Windows và Linux.
-- [ ] Không xuất hiện lỗi xung đột `Gymnasium` vs `Gym` trong toàn bộ pipeline.
-- [ ] Hàm `make_mario_env()` trả về đúng tensor shape `(4, 84, 84)` kiểu `np.uint8`.
-- [ ] Môi trường chạy baseline đạt tốc độ tối thiểu 60 FPS trên CPU thông thường.
-- [ ] RAM tiêu thụ ổn định dưới 1.5 GB sau 100,000 steps liên tục.
-- [ ] Cung cấp đầy đủ tài liệu hướng dẫn và hỗ trợ 3 thành viên còn lại cài đặt thành công.
-- [ ] Hoàn thành bản thảo Chương 1, Chương 3 và Chương 9 của Báo cáo đồ án.
-- [ ] Hoàn thành phần Slide và thuyết trình thử nghiệm tự tin trong 5 phút.
+1. **Hỏi:** *Tại sao trong FrameSkip phải lấy pixel-wise max của 2 khung cuối mà không lấy khung cuối đơn lẻ?*
+   - **Đáp:** Máy NES có giới hạn phần cứng về số sprite trên một dòng quét nên áp dụng cơ chế nhấp nháy sprite (sprite flickering) xen kẽ giữa các khung chẵn và lẻ. Lấy max của 2 khung cuối đảm bảo mọi sprite (Mario, kẻ thù) đều được giữ lại trên quan sát đưa vào mạng nơ-ron.
+2. **Hỏi:** *Tại sao GrayResize phải dùng cv2.COLOR_RGB2GRAY thay vì (R+G+B)/3?*
+   - **Đáp:** Mắt người nhạy cảm với độ chói Luminance ($Y = 0.299R + 0.587G + 0.114B$). Trong Mario, nền trời màu xanh lam có giá trị B rất cao nhưng độ sáng thực tế lại tối hơn mặt đất xanh lục hoặc gạch đỏ. Lấy trung bình cộng sẽ làm mất độ tương phản giữa Mario và nền trời.
+3. **Hỏi:** *Tại sao lại cần FrameStack 4 khung hình?*
+   - **Đáp:** Một khung hình tĩnh chỉ cho biết vị trí (Position). Xếp chồng 4 khung hình liên tiếp cung cấp thông tin về vận tốc (Velocity) và gia tốc (Acceleration), giúp mạng biết Mario đang chạy hay đứng yên, đang nhảy lên hay rơi xuống.
+4. **Hỏi:** *Sự khác nhau giữa terminated và truncated trong Gymnasium là gì?*
+   - **Đáp:** `terminated` là kết thúc tự nhiên do luật chơi (chết, chạm cờ), tương lai bằng 0 và không bootstrap. `truncated` là cắt ngắn nhân tạo (hết giờ, cắt do kẹt), Mario vẫn còn sống và critic bắt buộc phải bootstrap từ $V(s_{final})$.
+5. **Hỏi:** *Tại sao lại cần ScalarizeReward mà không huấn luyện trực tiếp đa mục tiêu?*
+   - **Đáp:** Thuật toán PPO chuẩn tối ưu hàm mục tiêu vô hướng. Trọng số $w$ giúp định hướng tác tử ưu tiên tiến xa ($x\_pos$) và sợ chết ($death$), tránh bị phân tâm nhặt xu hay đạp quái.
+
+---
+
+## VI. CHECKLIST NGHIỆM THU CỦA NGƯỜI 1
+
+- [ ] `FrameSkip` lặp đúng 4 lần, dừng khi terminated/truncated, cộng dồn vector reward.
+- [ ] `FrameSkip` lấy pixel-wise max của 2 khung cuối cùng.
+- [ ] `GrayResize` chuyển màu chuẩn Luminance và resize về đúng 84×84 `uint8`.
+- [ ] `GrayResize` cập nhật `self.observation_space = gym.spaces.Box(0, 255, (84, 84), np.uint8)`.
+- [ ] `ScalarizeReward` kiểm tra độ dài 5 trọng số, tính tích vô hướng $w \cdot r$ ra float.
+- [ ] `ScalarizeReward` lưu vector gốc vào `info["vector_reward"]`.
+- [ ] Chạy `pytest -q tests/test_wrappers.py` đạt **7/7 PASS**.
+- [ ] Viết xong Mục 1 (Wrappers) và Mục 5 (Phân tích thất bại) cho Báo cáo học thuật.
+- [ ] Hoàn thành Slide 1–3 và tự tin trả lời 5 câu hỏi vấn đáp chuyên sâu.
