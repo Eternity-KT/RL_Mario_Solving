@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Phiên bản Python lấy từ file .python-version (hiện là 3.13, khớp với
-      # requirements.txt: numpy 2.3.x không hỗ trợ Python 3.10).
+      # Phiên bản Python lấy từ file .python-version (3.11). Không dùng 3.13:
+      # pyproject.toml ghim numpy<2 (nes-py 8.2.1 tràn số với NumPy 2) mà numpy 1.x không có bản cho 3.13.
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -31,13 +31,8 @@ jobs:
         continue-on-error: true
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements-dev.txt ]; then
-            pip install -r requirements-dev.txt
-          elif [ -f requirements.txt ]; then
-            pip install -r requirements.txt pytest
-          else
-            pip install pytest
-          fi
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e .
 
       # Nếu cài nes-py thất bại vẫn đảm bảo có pytest; tests/conftest.py sẽ
       # tự bỏ qua các test cần môi trường NES.
