@@ -183,7 +183,7 @@ python -c "from mario_ppo.env import make_env; env = make_env('1-1'); obs, _ = e
 - **Ngày 2:** Viết phiên bản Alpha của `GrayResize` và `FrameSkip`.
 - **Ngày 3:** Hoàn thiện `ScalarizeReward`. Chạy `pytest -q tests/test_wrappers.py` đạt **7/7 PASS**. Bàn giao cho Người 4.
 - **Ngày 4:** Phối hợp Người 4 kiểm tra tính tương thích của wrappers với `make_env` trong `mario_ppo/env.py`.
-- **Ngày 5:** Hỗ trợ kiểm thử pipeline toàn diện (`pytest -q` đạt 30/30 PASS).
+- **Ngày 5:** Hỗ trợ kiểm thử pipeline toàn diện (`pytest -q` đạt 35/35 PASS).
 - **Ngày 6:** Theo dõi tiến trình huấn luyện Màn 1-1, kiểm tra các khung hình hiển thị có bị lỗi sprite hay không.
 - **Ngày 7:** Viết và kích hoạt `NoProgressTruncation` trong khối `if not eval_mode:` của `env.py` nếu Mario bị kẹt ống nước.
 - **Ngày 8:** Kiểm tra các video `videos/step_*.mp4` của Màn 1-1 để đánh giá chất lượng tiền xử lý.

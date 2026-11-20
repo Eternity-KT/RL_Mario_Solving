@@ -19,7 +19,7 @@
 
 ## Cách kiểm tra
 
-<!-- Lệnh để reviewer tự chạy lại, vd: python -m pytest tests/test_env.py -->
+<!-- Lệnh để reviewer tự chạy lại, vd: python -m pytest tests/test_wrappers.py tests/test_nhom_wrappers.py -->
 
 ## Checklist
 

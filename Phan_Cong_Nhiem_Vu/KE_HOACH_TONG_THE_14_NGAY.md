@@ -87,7 +87,7 @@ Theo đề bài chính thức (`Bài tập nhóm cuối kì.pdf`), nhóm phải 
 | **NGƯỜI 1** | `mario_ppo/wrappers.py` | `FrameSkip`, `GrayResize`, `ScalarizeReward`, mẹo `NoProgressTruncation`. | `tests/test_wrappers.py` (7/7 PASS) |
 | **NGƯỜI 2** | `mario_ppo/model.py` | `ActorCritic.__init__` (CNN Nature, khởi tạo trực giao), `forward`, `act`. | `tests/test_model.py` (5/5 PASS) |
 | **NGƯỜI 3** | `mario_ppo/ppo.py` | `compute_gae`, `clipped_policy_loss`, `value_loss`, `approx_kl_and_clipfrac`, `ppo_loss`, `ppo_update`. | `tests/test_gae.py` (8/8) & `test_ppo.py` (10/10) |
-| **NGƯỜI 4** | `train.py`, `evaluate.py`, `env.py` | Tích hợp pipeline, chạy full pytest, đo SPS, quản trị checkpoint/resume, benchmark seed 2026, tổng biên tập báo cáo & slide. | `tests/test_pipeline.py` & toàn bộ `pytest -q` (30/30) |
+| **NGƯỜI 4** | `train.py`, `evaluate.py`, `env.py` | Tích hợp pipeline, chạy full pytest, đo SPS, quản trị checkpoint/resume, benchmark seed 2026, tổng biên tập báo cáo & slide. | `tests/test_pipeline.py` & toàn bộ `pytest -q` (35/35 bài công khai) |
 
 ### Ma trận RACI tổng thể
 - Người 1: **R/A** Wrappers; **C** Tích hợp; **R** Mục 1 & 5 Báo cáo; **R** Slide 1–3.
@@ -106,7 +106,7 @@ Theo đề bài chính thức (`Bài tập nhóm cuối kì.pdf`), nhóm phải 
 
 ### Giai đoạn 2: Ngày 4–5 – Tích hợp và Kiểm thử PPO (P0 Milestone)
 - **Ngày 4:** Người 3 hoàn thiện `ppo_loss`, `ppo_update` (qua `test_ppo`). Người 4 merge nhánh integration, sửa lỗi tương thích tensor giữa 3 module.
-- **Ngày 5 (MỐC TUẦN 1 CỦA ĐỀ BÀI):** Toàn bộ `pytest -q` PASS 100% (30/30 bài test). Chạy smoke test huấn luyện 10k bước; đo SPS ban đầu.
+- **Ngày 5 (MỐC TUẦN 1 CỦA ĐỀ BÀI):** Toàn bộ `pytest -q` PASS 100% (35/35 bài test công khai, cộng các bài bổ sung `tests/test_nhom_*.py`). Chạy smoke test huấn luyện 10k bước; đo SPS ban đầu.
 
 ### Giai đoạn 3: Ngày 6–9 – Huấn luyện và Đánh giá Màn 1-1 (P0)
 - **Ngày 6:** Khởi chạy Run 1 Màn 1-1 (5M bước) trên máy trạm đa lõi mạnh nhất. Đo SPS thời gian thực.
@@ -213,7 +213,7 @@ Chạy 20 lượt độc lập, mỗi lượt xuất phát sau $0..30$ NOOP sinh
 
 ## 9. BỘ TIÊU CHÍ NGHIỆM THU VÀ CHECKLIST TOÀN DIỆN
 
-- [ ] 1. Toàn bộ 30 bài test công khai `pytest -q` PASS 100% (30đ Hạng mục A).
+- [ ] 1. Toàn bộ 35 bài test công khai `pytest -q` PASS 100% (30đ Hạng mục A).
 - [ ] 2. Màn 1-1 đạt `flag_rate >= 0.8` (25đ Hạng mục B). Có `ket-qua-1-1.json` và `1-1.mp4`.
 - [ ] 3. Màn thưởng 1-2 đạt `flag_rate >= 0.8` (15đ Hạng mục C). Có `ket-qua-1-2.json` và `1-2.mp4`.
 - [ ] 4. Hoàn thành Thí nghiệm đối chứng có kiểm soát $\gamma=0.9$ vs $\gamma=0.99$.

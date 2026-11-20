@@ -26,17 +26,24 @@ Lúc đầu `pytest -q` báo nhiều lỗi `NotImplementedError`. Đó là các 
 
 Mỗi người làm trên nhánh riêng (đặt tên tự do), tách từ nhánh tích hợp hiện tại, và mở PR để Người 4 review/merge.
 
-| Người | Tệp chính | Bài test phải PASS |
-|---|---|---|
-| 1 | `mario_ppo/wrappers.py`, `mario_ppo/env.py` (mẹo) | `tests/test_wrappers.py` (7 bài) |
-| 2 | `mario_ppo/model.py` | `tests/test_model.py` (5 bài) |
-| 3 | `mario_ppo/ppo.py` | `tests/test_gae.py` (8 bài), `tests/test_ppo.py` (10 bài) |
-| 4 | `train.py`, `configs/`, `scripts/` | `tests/test_pipeline.py` (5 bài), toàn bộ `pytest -q` (**35 bài**) |
+| Người | Tệp chính | Bài test công khai phải PASS | Bài bổ sung của nhóm phải PASS |
+|---|---|---|---|
+| 1 | `mario_ppo/wrappers.py`, `mario_ppo/env.py` (mẹo) | `tests/test_wrappers.py` (7 bài) | `tests/test_nhom_wrappers.py` (8 bài) |
+| 2 | `mario_ppo/model.py` | `tests/test_model.py` (5 bài) | (chưa cần) |
+| 3 | `mario_ppo/ppo.py` | `tests/test_gae.py` (8 bài), `tests/test_ppo.py` (10 bài) | `tests/test_nhom_ppo.py` (11 bài) |
+| 4 | `train.py`, `configs/`, `scripts/`, `tests/` | `tests/test_pipeline.py` (5 bài), toàn bộ `pytest -q` (**35 bài công khai**) | `tests/test_nhom_pipeline.py` (9 bài); tổng `pytest -q` là **63 bài** |
+
+**Bài bổ sung `tests/test_nhom_*.py`** do Người 4 viết để bắt các lỗi mà 35 bài công khai để lọt (đã thử cài sai
+mà bài công khai vẫn PASS), ví dụ: `ppo_update` quên `zero_grad` / `clip_grad_norm_` / không xáo trộn, `ppo_loss`
+quên nhân `vf_coef`, FrameSkip max-pool cả 4 khung, môi trường đánh giá vẫn bật NOOP ngẫu nhiên, resume sai số bước.
+Bài bổ sung không tính điểm nhưng PASS bài công khai mà trượt bài bổ sung thường nghĩa là huấn luyện sẽ hỏng.
 
 Quy tắc:
 - Chỉ sửa tệp mình sở hữu. Cần sửa tệp của người khác thì báo trong nhóm trước.
-- Trước khi mở PR: `pytest -q tests/<test của mình>` phải PASS.
-- **Không sửa** `mario_ppo/evaluate.py` (script chấm điểm) và `tests/` (bài kiểm tra công khai).
+- Trước khi mở PR: `pytest -q tests/<test của mình> tests/test_nhom_<phần của mình>.py` phải PASS.
+- **Không sửa** `mario_ppo/evaluate.py` (script chấm điểm) và 5 tệp bài kiểm tra công khai
+  `tests/test_{wrappers,model,gae,ppo,pipeline}.py` (giữ y nguyên bản của đề). Bài bổ sung `tests/test_nhom_*.py`
+  do Người 4 quản lý; thấy bài bổ sung nào sai thì báo Người 4.
 - Không commit `.venv/`, `runs/`, `*.pt`, video. `.gitignore` đã chặn sẵn. Checkpoint chia sẻ qua Drive.
 
 Thứ tự làm gợi ý (theo README): `test_wrappers` → `test_model` → `test_gae` → `test_ppo` → `test_pipeline`.
