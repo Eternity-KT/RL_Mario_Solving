@@ -1,0 +1,19 @@
+==============================================================================
+BÁO CÁO CHẨN ĐOÁN ĐỘNG HỌC HUẤN LUYỆN PPO — MÀN 1-1
+Thư mục nguồn: runs\1-1\run1
+==============================================================================
+- Số lần cập nhật (dòng progress.csv): 1,221
+- Tiến độ bước tác tử               : 5,001,216 / 5,000,000 (100.0%)
+- Tốc độ SPS                        : TB = 666.2 | Trung vị = 696.9 | Cực đại = 773.5 | Cực tiểu = 396.6
+- Thời gian ước tính (theo SPS TB)  : Đã chạy ~2g 05p 07s | Còn lại ~0s | Tổng 5,000,000 bước ~2g 05p 05s
+- Đỉnh huấn luyện (recent-100)      : x_pos max = 3161.0 | flag_rate max = 1.000 | ep_return gần nhất = 101.50
+- Đánh giá định kỳ (evals.csv)      : 10 mốc | Tốt nhất tại bước 1,503,232: flag_rate = 1.00, mean x_pos = 3161.0 [ĐẠT NGƯỠNG VƯỢT MÀN (>= 0.8)]
+------------------------------------------------------------------------------
+CHẨN ĐOÁN CẢNH BÁO ĐỎ (MỤC 5.2 KẾ HOẠCH TỔNG THỂ):
+  [KHÔNG CÓ CẢNH BÁO ĐỎ] Các chỉ số x_pos, entropy và approx_kl đều nằm trong vùng an toàn.
+------------------------------------------------------------------------------
+NHẬN XÉT CHI TIẾT:
+  [OK - TIẾN TRIỂN X_POS] Sau 1,000,000 bước, x_pos TB = 3011.6 (cực đại: 3161.0), không ghi nhận kẹt ống nước kéo dài.
+  [OK - ENTROPY] Chính sách duy trì khám phá ổn định (khởi đầu: 1.939 / ln(7)=1.946 -> hiện tại: 0.564, không rớt dưới 0.1).
+  [OK - APPROX_KL] Bước cập nhật chính sách ổn định (TB: 0.0062, cực đại: 0.0396, tỉ lệ > 0.05: 0.0%, clipfrac TB: 0.0701).
+==============================================================================
