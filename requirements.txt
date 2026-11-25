@@ -1,0 +1,2 @@
+# Cài đặt mario-ppo ở chế độ editable cùng toàn bộ dependencies từ pyproject.toml
+-e .

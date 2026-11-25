@@ -4,7 +4,7 @@
 
 ## Liên kết công việc (WBS)
 
-- Hạng mục WBS: #<!-- số hạng mục trong KE_HOACH_TONG_THE_5_TUAN.md, vd. 2 -->
+- Hạng mục WBS: <!-- nhiệm vụ trong Phan_Cong_Nhiem_Vu/KE_HOACH_TONG_THE_14_NGAY.md, vd. Người 2 - Ngày 2 -->
 - Người phụ trách: <!-- Người 1 / 2 / 3 / 4 -->
 - Issue liên quan (nếu có): <!-- Closes #... -->
 
