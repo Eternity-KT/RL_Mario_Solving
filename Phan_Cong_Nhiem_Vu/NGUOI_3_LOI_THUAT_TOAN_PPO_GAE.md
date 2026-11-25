@@ -229,7 +229,7 @@ pytest -q -k normalised         # Kiểm tra chuẩn hóa lợi thế unbiased=F
 - **Ngày 2:** Viết phiên bản Alpha của hàm `compute_gae`, xử lý kỹ trường hợp biên $T-1$ và $truncated=1$.
 - **Ngày 3:** Hoàn thiện `compute_gae`, `clipped_policy_loss`, `value_loss`, `approx_kl_and_clipfrac`. Chạy `pytest -q tests/test_gae.py` đạt **8/8 PASS**.
 - **Ngày 4:** Viết hoàn chỉnh `ppo_loss` và `ppo_update`. Chạy `pytest -q tests/test_ppo.py` đạt **10/10 PASS**. Bàn giao toàn bộ lõi PPO cho Người 4.
-- **Ngày 5:** Hỗ trợ Người 4 chạy smoke test tích hợp. Đảm bảo toàn bộ 30 bài kiểm tra công khai PASS 100%.
+- **Ngày 5:** Hỗ trợ Người 4 chạy smoke test tích hợp. Đảm bảo toàn bộ 35 bài kiểm tra công khai PASS 100%.
 - **Ngày 6:** Theo dõi chỉ số `approx_kl` và `clipfrac` trong phiên huấn luyện chính thức Màn 1-1.
 - **Ngày 7:** Cùng Người 4 chẩn đoán đồ thị learning curve. Điều chỉnh `ent_coef` nếu Mario thiếu tính khám phá.
 - **Ngày 8:** Tổng kết số liệu Run 1 Màn 1-1. Thiết kế chi tiết cấu hình Thí nghiệm so sánh đối chứng (Ablation Study).

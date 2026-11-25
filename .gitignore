@@ -80,6 +80,8 @@ results/tmp/
 results/*.tmp
 results/*.pkl
 results/*.npy
+results/*.zip
+results/**/*.mp4
 
 # Jupyter
 .ipynb_checkpoints/

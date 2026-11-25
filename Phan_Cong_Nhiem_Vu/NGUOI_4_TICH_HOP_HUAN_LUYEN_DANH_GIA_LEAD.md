@@ -9,7 +9,7 @@
 - **Họ và tên thành viên:** [Điền tên Thành viên 4]
 - **Vai trò chuyên trách:** Kỹ sư trưởng Tích hợp hệ thống, Quản trị Huấn luyện, Đánh giá kiểm chuẩn & Trưởng nhóm Học thuật.
 - **Tệp mã nguồn sở hữu chính:** `mario_ppo/train.py`, `mario_ppo/evaluate.py`, `mario_ppo/env.py`, `configs/default.yaml`.
-- **Bộ bài kiểm tra đơn vị cá nhân:** `tests/test_pipeline.py` (5 bài test) và toàn bộ `pytest -q` (30/30 bài test).
+- **Bộ bài kiểm tra đơn vị cá nhân:** `tests/test_pipeline.py` (5 bài test) và toàn bộ `pytest -q` (35/35 bài test công khai).
 - **Mục tiêu điểm số đóng góp:** Chịu trách nhiệm về sự vận hành trơn tru của toàn bộ hệ thống; đạt trọn vẹn 25/25 điểm Màn 1-1 (Hạng mục B), 15/15 điểm Màn thưởng (Hạng mục C), tổng biên tập Báo cáo 8 trang (25 điểm) và Slide/Demo (5 điểm).
 
 ---
@@ -106,7 +106,7 @@ Tận dụng các bộ lọc CNN trích xuất đặc trưng của Màn 1-1, Mar
 # 1. Kiểm tra tích hợp pipeline
 pytest -q tests/test_pipeline.py
 
-# 2. Kiểm tra toàn bộ 30 bài test công khai của dự án (BẮT BUỘC PASS 100%)
+# 2. Kiểm tra toàn bộ 35 bài test công khai + các bài bổ sung tests/test_nhom_*.py (BẮT BUỘC PASS 100%)
 pytest -q
 
 # 3. Chạy thử nghiệm huấn luyện ngắn (Smoke test 10,000 bước)
@@ -124,7 +124,7 @@ python -c "import pandas as pd; df = pd.read_csv('runs/smoke_test/progress.csv')
 - **Ngày 2:** Khảo sát tệp `configs/default.yaml`, viết các script bash/powershell tự động hóa quy trình chạy huấn luyện và lưu trữ.
 - **Ngày 3:** Rà soát code của Người 1, 2, 3 trên các nhánh feature; kiểm tra giao diện tensor đầu vào/đầu ra.
 - **Ngày 4:** Merge nhánh integration; giải quyết các xung đột merge conflict; sửa lỗi mismatch tensor giữa CNN và PPO.
-- **Ngày 5 (CỘT MỐC TUẦN 1):** Chạy `pytest -q tests/test_pipeline.py` (5/5 PASS) và `pytest -q` đạt **30/30 PASS tuyệt đối** (30 điểm Hạng mục A). Chạy smoke test 10k bước và đo SPS ban đầu.
+- **Ngày 5 (CỘT MỐC TUẦN 1):** Chạy `pytest -q tests/test_pipeline.py` (5/5 PASS) và `pytest -q` đạt **35/35 PASS tuyệt đối** (30 điểm Hạng mục A). Chạy smoke test 10k bước và đo SPS ban đầu.
 - **Ngày 6:** Khởi chạy Run 1 chính thức cho Màn 1-1 (5M bước) trên máy trạm đa lõi mạnh nhất. Đo đạc SPS thực tế.
 - **Ngày 7:** Đọc nhật ký `progress.csv`. Nếu Mario kẹt ở ống nước đầu tiên ($x < 400$), phối hợp Người 1 bật mẹo `NoProgressTruncation` và chạy Run 2 song song.
 - **Ngày 8:** Quá trình huấn luyện Màn 1-1 cán mốc 3.5M–5M bước. Lọc các checkpoint có `flag_rate` cao trong `evals.csv`.
@@ -157,7 +157,7 @@ python -c "import pandas as pd; df = pd.read_csv('runs/smoke_test/progress.csv')
 ## VI. CHECKLIST NGHIỆM THU CỦA NGƯỜI 4
 
 - [ ] Chạy `pytest -q tests/test_pipeline.py` đạt **5/5 PASS**.
-- [ ] Chạy toàn bộ `pytest -q` đạt **30/30 PASS tuyệt đối** (Đạt trọn vẹn 30 điểm Hạng mục A).
+- [ ] Chạy toàn bộ `pytest -q` đạt **35/35 PASS tuyệt đối** (Đạt trọn vẹn 30 điểm Hạng mục A).
 - [ ] Huấn luyện Màn 1-1 hoàn tất 3.5M–5M bước; có `progress.csv` và `evals.csv`.
 - [ ] Đánh giá Màn 1-1 qua `evaluate.py` (seed 2026, 20 lượt) đạt `flag_rate >= 0.8` (25 điểm Hạng mục B).
 - [ ] Xuất tệp `ket-qua-1-1.json` và video `1-1.mp4`.
